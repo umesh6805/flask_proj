@@ -1,28 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from app import app
 
-app = Flask(__name__)
-app.secret_key = "secret-key"
+def test_index_redirect():
+    client = app.test_client()
+    response = client.get("/")
+    assert response.status_code == 302
 
-users=[]
+def test_signup_page():
+    client = app.test_client()
+    response = client.get("/signup")
+    assert response.status_code == 200
 
-@app.route("/")
-def index():
-    return redirect(url_for("signup"))
+def test_signup_success():
+    client = app.test_client()
+    response = client.post(
+        "/signup",
+        data={
+            "name": "Umesh",
+            "email": "umesh@test.com",
+            "password": "1234",
+            "confirm": "1234",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
 
-@app.route("/signup", methods=["GET","POST"])
-def signup():
-    if request.method=="POST":
-        name=request.form["name"]
-        email=request.form["email"]
-        password=request.form["password"]
-        confirm=request.form["confirm"]
-        if password!=confirm:
-            flash("Passwords do not match!")
-            return redirect(url_for("signup"))
-        users.append({"name":name,"email":email})
-        flash("Signup successful!")
-        return render_template("success.html", user=name)
-    return render_template("signup.html")
-
-if __name__=="__main__":
-    app.run(debug=True)
+def test_signup_password_mismatch():
+    client = app.test_client()
+    response = client.post(
+        "/signup",
+        data={
+            "name": "Umesh",
+            "email": "umesh@test.com",
+            "password": "1234",
+            "confirm": "5678",
+        },
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
